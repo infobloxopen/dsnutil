@@ -45,9 +45,10 @@ func (s *scanner) skipSpaces() (rune, bool) {
 // ParseOpts parses the options from name and adds them to the values.
 //
 // The parsing code is based on conninfo_parse from libpq's fe-connect.c
-func ParseOpts(name string, o values) error {
+func ParseOpts(name string) (map[string]string, error) {
 	s := newscanner(name)
 
+	o := make(values)
 	for {
 		var (
 			keyRunes, valRunes []rune
@@ -74,7 +75,7 @@ func ParseOpts(name string, o values) error {
 
 		// The current character should be =
 		if r != '=' || !ok {
-			return fmt.Errorf(`missing "=" after %q in connection info string"`, string(keyRunes))
+			return nil, fmt.Errorf(`missing "=" after %q in connection info string"`, string(keyRunes))
 		}
 
 		// Skip any whitespace after the =
@@ -88,7 +89,7 @@ func ParseOpts(name string, o values) error {
 			for !unicode.IsSpace(r) {
 				if r == '\\' {
 					if r, ok = s.next(); !ok {
-						return fmt.Errorf(`missing character after backslash`)
+						return nil, fmt.Errorf(`missing character after backslash`)
 					}
 				}
 				valRunes = append(valRunes, r)
@@ -101,7 +102,7 @@ func ParseOpts(name string, o values) error {
 		quote:
 			for {
 				if r, ok = s.next(); !ok {
-					return fmt.Errorf(`unterminated quoted string literal in connection string`)
+					return nil, fmt.Errorf(`unterminated quoted string literal in connection string`)
 				}
 				switch r {
 				case '\'':
@@ -118,5 +119,5 @@ func ParseOpts(name string, o values) error {
 		o[string(keyRunes)] = string(valRunes)
 	}
 
-	return nil
+	return map[string]string(o), nil
 }

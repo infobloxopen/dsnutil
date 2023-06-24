@@ -11,7 +11,7 @@ import (
 func TestParseOpts(t *testing.T) {
 	tests := []struct {
 		in       string
-		expected values
+		expected map[string]string
 		valid    bool
 	}{
 		{"dbname=hello user=goodbye", values{"dbname": "hello", "user": "goodbye"}, true},
@@ -34,21 +34,20 @@ func TestParseOpts(t *testing.T) {
 		{`user='a \'b'`, values{"user": `a 'b`}, true},
 
 		// Incomplete escape
-		{`user=x\`, values{}, false},
+		{`user=x\`, nil, false},
 
 		// No '=' after the key
-		{"postgre://marko@internet", values{}, false},
-		{"dbname user=goodbye", values{}, false},
-		{"user=foo blah", values{}, false},
-		{"user=foo blah   ", values{}, false},
+		{"postgre://marko@internet", nil, false},
+		{"dbname user=goodbye", nil, false},
+		{"user=foo blah", nil, false},
+		{"user=foo blah   ", nil, false},
 
 		// Unterminated quoted value
 		{"dbname=hello user='unterminated", values{}, false},
 	}
 
 	for _, test := range tests {
-		o := make(values)
-		err := ParseOpts(test.in, o)
+		o, err := ParseOpts(test.in)
 
 		switch {
 		case err != nil && test.valid:
